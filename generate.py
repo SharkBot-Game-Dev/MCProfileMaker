@@ -16,9 +16,10 @@ class FontNotfound(Exception):
 SaveType = Literal["file", "io"]
 
 class MinecraftProfileMaker:
-    def __init__(self, backgrounds: List[str], fonts: List[str]):
+    def __init__(self, backgrounds: List[str], fonts: List[str], plugins: list):
         self.backgrounds = backgrounds
         self.fonts = fonts
+        self.plugins = plugins
 
         self.W = 800
         self.H = 500
@@ -66,6 +67,12 @@ class MinecraftProfileMaker:
         draw = ImageDraw.Draw(image)
         draw.text((230, 25), username, "#ffffff", font_main)
         draw.text((230, 55), playerRes["id"], "#ffffff", font_sub)
+
+        for plugin in self.plugins:
+            plugin.image = image
+            plugin.fontMain = font_main
+            plugin.fontSub = font_sub
+            plugin.execute()
 
         if save_type == "file":
             image.save("profile.png")
