@@ -46,6 +46,8 @@ class MinecraftProfileMaker:
 
         image = Image.open("background/" + background)
 
+        image = image.convert("RGBA")
+
         image = image.resize((self.W, self.H))
 
         image.paste(playerSkinImage, (10, 10), playerSkinImage)
@@ -74,5 +76,5 @@ class MinecraftProfileMaker:
             return io_profile
 
 if __name__ == "__main__":
-    gen = MinecraftProfileMaker(["sakura.png"], ["gg sans Bold.ttf", "gg sans Medium.ttf", "gg sans Regular.ttf", "gg sans Semibold.ttf"])
-    gen.generate("modoggu123", "sakura.png", "gg sans Medium.ttf", "file")
+    gen = MinecraftProfileMaker(["sakura.png", "monster_steve.jpeg", "cow.jpg"], ["gg sans Bold.ttf", "gg sans Medium.ttf", "gg sans Regular.ttf", "gg sans Semibold.ttf"])
+    gen.generate("modoggu123", "cow.jpg", "gg sans Medium.ttf", "file")
