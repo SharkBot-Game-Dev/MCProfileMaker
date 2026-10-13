@@ -21,6 +21,11 @@ async def setup_hook():
     # print("スラッシュコマンドを同期しました。")
     print("起動中..")
 
+@bot.event
+async def on_ready():
+    print("起動しました。")
+    await bot.change_presence(activity=discord.CustomActivity("/build", emoji="⛏️"))
+
 class ProfileCardEdit(discord.ui.Modal):
     def __init__(self, mcid: str):
         super().__init__(title="編集する", timeout=180)
