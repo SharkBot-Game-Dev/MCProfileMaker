@@ -1,5 +1,7 @@
+import re
+
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import dotenv
 import os
 
@@ -8,6 +10,8 @@ import asyncio
 from generate import MinecraftProfileMaker
 from plugins import favoriteServer
 
+import json
+
 dotenv.load_dotenv()
 
 intents = discord.Intents.none()
@@ -15,16 +19,33 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
+PROFILE_SETTING = {}
+
 @bot.event
 async def setup_hook():
     # await bot.tree.sync()
     # print("スラッシュコマンドを同期しました。")
     print("起動中..")
 
+    try:
+        with open("save.json", mode="r") as f:
+            global PROFILE_SETTING
+            PROFILE_SETTING = json.load(f)
+    except:
+        PROFILE_SETTING = {}
+        pass
+
+@tasks.loop(minutes=5)
+async def save_loop():
+    with open("save.json", mode="w") as f:
+        json.dump(PROFILE_SETTING, f)
+
 @bot.event
 async def on_ready():
     print("起動しました。")
     await bot.change_presence(activity=discord.CustomActivity("/build", emoji="⛏️"))
+
+    save_loop.start()
 
 class ProfileCardEdit(discord.ui.Modal):
     def __init__(self, mcid: str):
@@ -58,19 +79,20 @@ class ProfileCardEdit(discord.ui.Modal):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.send_message(embed=discord.Embed(description="<a:loading:1559738064098689217> 生成しています...", color=discord.Color.blue()))
 
         try:
-
-            msg = await interaction.message.reply("生成中..")
-
             assert isinstance(self.background_image.component, discord.ui.Select)
             assert isinstance(self.favoriteServerIps.component, discord.ui.TextInput)
+
+            PROFILE_SETTING[self.mcid + f"_{interaction.user.id}"] = {}
 
             plugins = []
             favoriteServerIpsValue = self.favoriteServerIps.component.value
             if favoriteServerIpsValue:
                 plugins.append(favoriteServer.FavoriteServer(favoriteServerIpsValue.split("\n")))
+
+                PROFILE_SETTING[self.mcid + f"_{interaction.user.id}"]["favoriteServerIps"] = favoriteServerIpsValue.split("\n")
 
             profileMaker = MinecraftProfileMaker(
                 ["sakura.png", "monster_steve.jpeg", "cow.jpg"],
@@ -80,10 +102,14 @@ class ProfileCardEdit(discord.ui.Modal):
 
             image = await asyncio.to_thread(profileMaker.generate, self.mcid, self.background_image.component.values[0], "discordfont.ttf", "io")
 
+            PROFILE_SETTING[self.mcid + f"_{interaction.user.id}"]["background"] = self.background_image.component.values[0]
+
             file = discord.File(image, filename="profile.png")
 
-            await interaction.message.edit(attachments=[file])
-            await msg.delete()
+            view = discord.ui.View(timeout=None)
+            view.add_item(discord.ui.Button(label="編集する", custom_id=f"edit_profile+{self.mcid}", emoji="🖊️"))
+
+            await interaction.edit_original_response(attachments=[file], view=view, embed=discord.Embed(description="<:check:1559738484716212374> 生成しました！", color=discord.Color.green()))
 
             image.close()
         except:
@@ -103,29 +129,60 @@ async def on_interaction(interaction: discord.Interaction):
     except:
         return
 
+MCID_RE = re.compile(r"^[a-zA-Z0-9_]{3,16}$")
+
 @bot.tree.command(name="build", description="プロフィールカードを生成します。")
 async def build(interaction: discord.Interaction, mcid: str):
-    await interaction.response.defer()
+    await interaction.response.send_message(embed=discord.Embed(description="<a:loading:1559738064098689217> 生成しています...", color=discord.Color.blue()))
+
+    if not MCID_RE.search(mcid):
+        await interaction.edit_original_response(embed=discord.Embed(title="不正なMCIDです。", description=f"正しいMCIDを入力してください。", color=discord.Color.red()))
+        return
 
     try:
+        profileSetting = PROFILE_SETTING.get(f"{mcid}_{interaction.user.id}")
+
+        plugins = []
+        background = "sakura.png"
+        if profileSetting:
+            favoriteServerIps = profileSetting.get('favoriteServerIps')
+            if favoriteServerIps:
+                plugins.append(favoriteServer.FavoriteServer(favoriteServerIps))
+
+            background = profileSetting.get('background', 'sakura.png')
 
         profileMaker = MinecraftProfileMaker(
             ["sakura.png", "monster_steve.jpeg", "cow.jpg"],
             ["gg sans Bold.ttf", "gg sans Medium.ttf", "gg sans Regular.ttf", "gg sans Semibold.ttf", "discordfont.ttf"],
-            []
+            plugins
         )
 
-        image = await asyncio.to_thread(profileMaker.generate, mcid, "sakura.png", "discordfont.ttf", "io")
+        image = await asyncio.to_thread(profileMaker.generate, mcid, background, "discordfont.ttf", "io")
 
         file = discord.File(image, filename="profile.png")
 
         view = discord.ui.View(timeout=None)
         view.add_item(discord.ui.Button(label="編集する", custom_id=f"edit_profile+{mcid}", emoji="🖊️"))
 
-        await interaction.followup.send(file=file, view=view, content="生成しました！")
+        await interaction.edit_original_response(attachments=[file], view=view, embed=discord.Embed(description="<:check:1559738484716212374> 生成しました！", color=discord.Color.green()))
 
         image.close()
-    except:
+    except Exception as e:
+        await interaction.edit_original_response(embed=discord.Embed(title="エラーが発生しました。", description=f"```{e}```", color=discord.Color.red()))
         return
+
+@bot.tree.command(name="save-now", description="管理者専用コマンドです。")
+async def save_now(interaction: discord.Interaction):
+    OWNER_ID = 1335428061541437531
+    if interaction.user.id != OWNER_ID:
+        await interaction.response.send_message(ephemeral=True, content="権限がありません。")
+        return
+
+    await interaction.response.defer()
+    
+    with open("save.json", mode="w") as f:
+        json.dump(PROFILE_SETTING, f)
+
+    await interaction.followup.send("セーブしました。")
 
 bot.run(os.environ.get('DISCORD_TOKEN'))
