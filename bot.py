@@ -23,8 +23,8 @@ PROFILE_SETTING = {}
 
 @bot.event
 async def setup_hook():
-    # await bot.tree.sync()
-    # print("スラッシュコマンドを同期しました。")
+    await bot.tree.sync()
+    print("スラッシュコマンドを同期しました。")
     print("起動中..")
 
     try:
@@ -170,19 +170,5 @@ async def build(interaction: discord.Interaction, mcid: str):
     except Exception as e:
         await interaction.edit_original_response(embed=discord.Embed(title="エラーが発生しました。", description=f"```{e}```", color=discord.Color.red()))
         return
-
-@bot.tree.command(name="save-now", description="管理者専用コマンドです。")
-async def save_now(interaction: discord.Interaction):
-    OWNER_ID = 1335428061541437531
-    if interaction.user.id != OWNER_ID:
-        await interaction.response.send_message(ephemeral=True, content="権限がありません。")
-        return
-
-    await interaction.response.defer()
-    
-    with open("save.json", mode="w") as f:
-        json.dump(PROFILE_SETTING, f)
-
-    await interaction.followup.send("セーブしました。")
 
 bot.run(os.environ.get('DISCORD_TOKEN'))
