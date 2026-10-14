@@ -23,8 +23,8 @@ PROFILE_SETTING = {}
 
 @bot.event
 async def setup_hook():
-    await bot.tree.sync()
-    print("スラッシュコマンドを同期しました。")
+    # await bot.tree.sync()
+    # print("スラッシュコマンドを同期しました。")
     print("起動中..")
 
     try:
