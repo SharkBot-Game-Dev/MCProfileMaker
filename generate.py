@@ -5,6 +5,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 import requests
 
+from i18n import tr
+
 class BackgroundNotfound(Exception):
     def __init__(self, *args):
         super().__init__(*args)
@@ -16,7 +18,8 @@ class FontNotfound(Exception):
 SaveType = Literal["file", "io"]
 
 class MinecraftProfileMaker:
-    def __init__(self, backgrounds: List[str], fonts: List[str], plugins: list):
+    def __init__(self, backgrounds: List[str], fonts: List[str], plugins: list, language: str = "ja"):
+        self.language = language
         self.backgrounds = backgrounds
         self.fonts = fonts
         self.plugins = plugins
@@ -26,10 +29,10 @@ class MinecraftProfileMaker:
 
     def generate(self, username: str, background: str, font: str, save_type: SaveType = "file"):
         if background not in self.backgrounds:
-            raise BackgroundNotfound("その背景画像はありません。")
+            raise BackgroundNotfound(tr(self.language, "background_error"))
 
         if font not in self.fonts:
-            raise FontNotfound("そのフォントはありません。")
+            raise FontNotfound(tr(self.language, "font_error"))
 
         try:
             font_main = ImageFont.truetype(f"fonts/{font}", 24)

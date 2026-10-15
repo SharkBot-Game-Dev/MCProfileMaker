@@ -1,13 +1,15 @@
 from typing import List
+from i18n import tr
 from PIL import Image, ImageDraw, ImageFont
 
 class FavoriteServer:
-    def __init__(self, server_ips: List[str]):
+    def __init__(self, server_ips: List[str], language: str = "ja"):
         self.image: Image
         self.imageDraw: ImageDraw
         self.fontMain: ImageFont
         self.fontSub: ImageFont
         self.server_ips = server_ips
+        self.language = language
 
         self.serverIcons = {
             "mc.hypixel.net": "images/hypixel.jpg",
@@ -18,7 +20,7 @@ class FavoriteServer:
     def execute(self):
         self.imageDraw = ImageDraw.Draw(self.image)
 
-        self.imageDraw.text((230, 85), "お気に入りサーバー", "#ffffff", self.fontMain)
+        self.imageDraw.text((230, 85), tr(self.language, "favorite_servers"), "#ffffff", self.fontMain)
 
         H = 90
         for ips in self.server_ips:
