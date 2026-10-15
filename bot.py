@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 MCID_RE = re.compile(r"[a-zA-Z0-9_]{3,16}\Z")
-BACKGROUNDS = ["sakura.png", "monster_steve.jpeg", "cow.jpg"]
+BACKGROUNDS = ["sakura.png", "monster_steve.jpeg", "cow.jpg", "creeper.jpg", "lava.jpg", "sord.jpg"]
 FONTS = ["gg sans Bold.ttf", "gg sans Medium.ttf", "gg sans Regular.ttf", "gg sans Semibold.ttf", "discordfont.ttf"]
 
 engine = create_async_engine(os.environ["DATABASE_URL"], pool_pre_ping=True)
@@ -57,6 +57,9 @@ class ProfileCardEdit(discord.ui.Modal):
                 discord.SelectOption(label="桜の画像", value="sakura.png"),
                 discord.SelectOption(label="モンスターの画像", value="monster_steve.jpeg"),
                 discord.SelectOption(label="牛の画像", value="cow.jpg"),
+                discord.SelectOption(label="溶岩の画像", value="lava.jpg"),
+                discord.SelectOption(label="クリーパーの画像", value="creeper.jpg"),
+                discord.SelectOption(label="剣の画像", value="sord.jpg"),
             ],
             required=True,
             max_values=1,
